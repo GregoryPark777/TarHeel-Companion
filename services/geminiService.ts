@@ -1,77 +1,65 @@
-
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
 export class GeminiService {
-  private getClient() {
-    // Creating a fresh instance ensures we use the latest API key from the environment/selector.
-    // Following guidelines: use the named parameter and direct process.env.API_KEY reference.
-    return new GoogleGenAI({ apiKey: process.env.API_KEY });
-  }
-
   private handleApiError(error: any) {
-    console.error("Gemini API Error:", error);
-    const errorMessage = error?.message || "";
+    console.error("Gemini API Error details:", error);
+    const msg = error?.message?.toLowerCase() || "";
     
-    // If the key is invalid or not found, we signal the UI to reset the key selection
-    if (errorMessage.includes("Requested entity was not found")) {
-      return "KEY_NOT_FOUND";
+    if (
+      msg.includes("403") || 
+      msg.includes("api_key_invalid") || 
+      msg.includes("not found") || 
+      msg.includes("requested entity was not found")
+    ) {
+      return "ERROR_KEY_INVALID";
+    }
+    if (msg.includes("429") || msg.includes("quota")) {
+      return "ERROR_QUOTA_EXCEEDED";
     }
     
-    return "I'm having a bit of trouble connecting to the UNC servers. Please try again later! Go Heels!";
-  }
-
-  async sendMessage(message: string, context?: string) {
-    const ai = this.getClient();
-    const chat = ai.chats.create({
-      model: 'gemini-3-pro-preview',
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.7,
-      },
-    });
-
-    const prompt = context 
-      ? `Using the following context: \n\n${context}\n\nAnswer the student's question: ${message}`
-      : message;
-
-    try {
-      const response: GenerateContentResponse = await chat.sendMessage({ message: prompt });
-      // Following guidelines: use .text property directly (not as a method).
-      return response.text || "";
-    } catch (error) {
-      return this.handleApiError(error);
-    }
+    return `ERROR_GENERAL: ${error?.message || "Internal AI error"}`;
   }
 
   async *sendMessageStream(message: string, context?: string) {
-    const ai = this.getClient();
-    const chat = ai.chats.create({
-      model: 'gemini-3-pro-preview',
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.7,
-      },
-    });
-
-    const prompt = context 
-      ? `Using the following context: \n\n${context}\n\nAnswer the student's question: ${message}`
-      : message;
+    // Vite replaces process.env.API_KEY via the 'define' configuration in vite.config.ts
+    if (!process.env.API_KEY) {
+      console.error("GeminiService: API_KEY is missing from process.env.");
+      yield "ERROR_GENERAL: API Key is missing. Please select one using the button in the UI.";
+      return;
+    }
 
     try {
-      const result = await chat.sendMessageStream({ message: prompt });
-      for await (const chunk of result) {
-        const c = chunk as GenerateContentResponse;
-        // Following guidelines: use .text property directly.
-        yield c.text || "";
+      // GUIDELINE: Create a new GoogleGenAI instance right before making an API call to ensure current key is used.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      
+      const responseStream = await ai.models.generateContentStream({
+        model: 'gemini-3-flash-preview',
+        contents: context 
+          ? `[Context]: ${context}\n\n[Question]: ${message}`
+          : message,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          temperature: 0.7,
+        },
+      });
+
+      let hasContent = false;
+      for await (const chunk of responseStream) {
+        // GUIDELINE: Use chunk.text property directly.
+        const text = chunk.text;
+        if (text) {
+          hasContent = true;
+          yield text;
+        }
+      }
+
+      if (!hasContent) {
+        yield "The advisor didn't return a response. Please try rephrasing.";
       }
     } catch (error: any) {
-      const err = this.handleApiError(error);
-      if (err === "KEY_NOT_FOUND") {
-        yield "ERROR_KEY_NOT_FOUND";
-      } else {
-        yield err;
-      }
+      console.error("GeminiService: Stream Exception:", error);
+      yield this.handleApiError(error);
     }
   }
 }
