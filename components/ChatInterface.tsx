@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, FileContext } from '../types';
 import { gemini } from '../services/geminiService';
@@ -76,8 +75,9 @@ Need help with COMP prerequisites? Looking for the best coffee on Franklin Stree
     } catch (err) {
       console.error("Chat Interaction Error:", err);
       analytics.trackSuccess(false); // REAL FAILURE TRACKING
+      // Fixed: Removed forbidden instruction to check .env file and instead directed user to project selection
       setMessages(prev => prev.map(m => 
-        m.id === assistantMsgId ? { ...m, content: "My apologies, I encountered a connection issue. Please check your API key in the .env file and try again! Go Heels!" } : m
+        m.id === assistantMsgId ? { ...m, content: "My apologies, I'm having trouble reaching the Carolina servers. Please verify your connection or click the key icon in the header to ensure your advisor project is correctly selected. Go Heels!" } : m
       ));
     } finally {
       setIsTyping(false);

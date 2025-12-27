@@ -1,10 +1,6 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
-/**
- * Declare process globally for the TypeScript compiler.
- * This prevents the 'Cannot find name process' error in the IDE/build.
- */
 declare const process: {
   env: {
     API_KEY: string;
@@ -13,11 +9,17 @@ declare const process: {
 
 export class GeminiService {
   async *sendMessageStream(message: string, context?: string) {
+    // Capture key inside the method to ensure we use the injected value
+    const key = typeof process !== 'undefined' ? process.env?.API_KEY : null;
+    
+    if (!key || key === 'undefined' || key.length < 5) {
+      yield "Your TarHeel AI project is not linked yet. Please click the key icon in the header to select your project and enable the advisor. Go Heels!";
+      return;
+    }
+
     try {
-      // Create the AI instance with the required API Key from the environment.
-      const ai = new GoogleGenAI({ 
-        apiKey: process.env.API_KEY 
-      });
+      // Must use new GoogleGenAI({ apiKey: ... }) format
+      const ai = new GoogleGenAI({ apiKey: key });
       
       const chat: Chat = ai.chats.create({
         model: 'gemini-3-pro-preview',
@@ -37,13 +39,15 @@ export class GeminiService {
         yield c.text || "";
       }
     } catch (error: any) {
-      console.error("Gemini Streaming Error:", error);
+      console.error("Gemini Interaction Error:", error);
       
+      const status = error?.status;
       const errMsg = error?.message || "";
-      if (errMsg.includes("Requested entity was not found") || errMsg.includes("API key not valid")) {
-        yield "Your project connection is missing or invalid. Please click the key icon in the header to re-select your 'TarHeel AI' project. Go Heels!";
+      
+      if (status === 403 || status === 404 || errMsg.includes("Requested entity was not found")) {
+        yield "Access Denied. Your project selection might be from a free tier. Please click the key icon to re-select a project from a paid Google Cloud account. Go Heels!";
       } else {
-        yield "I'm having trouble reaching the Carolina servers. Check your connection and try again!";
+        yield "The Carolina servers are temporarily busy. Please try your question again in a moment.";
       }
     }
   }
