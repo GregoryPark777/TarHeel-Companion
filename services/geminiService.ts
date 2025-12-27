@@ -9,16 +9,15 @@ declare const process: {
 
 export class GeminiService {
   async *sendMessageStream(message: string, context?: string) {
-    // Capture key inside the method to ensure we use the injected value
     const key = typeof process !== 'undefined' ? process.env?.API_KEY : null;
     
     if (!key || key === 'undefined' || key.length < 5) {
-      yield "Your TarHeel AI project is not linked yet. Please click the key icon in the header to select your project and enable the advisor. Go Heels!";
+      yield "Your TarHeel AI project is not linked. Please click the key icon in the header or refresh the page to select your project. Go Heels!";
       return;
     }
 
     try {
-      // Must use new GoogleGenAI({ apiKey: ... }) format
+      // Correct initialization required by @google/genai
       const ai = new GoogleGenAI({ apiKey: key });
       
       const chat: Chat = ai.chats.create({
@@ -39,15 +38,13 @@ export class GeminiService {
         yield c.text || "";
       }
     } catch (error: any) {
-      console.error("Gemini Interaction Error:", error);
-      
-      const status = error?.status;
+      console.error("Gemini stream error:", error);
       const errMsg = error?.message || "";
       
-      if (status === 403 || status === 404 || errMsg.includes("Requested entity was not found")) {
-        yield "Access Denied. Your project selection might be from a free tier. Please click the key icon to re-select a project from a paid Google Cloud account. Go Heels!";
+      if (errMsg.includes("Requested entity was not found") || errMsg.includes("403") || errMsg.includes("404")) {
+        yield "Access Denied. Your project selection might be from a free tier account. Please use the key icon to re-select a project from a paid Google Cloud account. Go Heels!";
       } else {
-        yield "The Carolina servers are temporarily busy. Please try your question again in a moment.";
+        yield "I'm having trouble reaching the Carolina servers right now. Please check your connection and try again!";
       }
     }
   }
