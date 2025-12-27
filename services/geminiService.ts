@@ -9,15 +9,16 @@ declare const process: {
 
 export class GeminiService {
   async *sendMessageStream(message: string, context?: string) {
+    // Pick up the key at the moment of the request
     const key = typeof process !== 'undefined' ? process.env?.API_KEY : null;
     
     if (!key || key === 'undefined' || key.length < 5) {
-      yield "Your TarHeel AI project is not linked. Please click the key icon in the header or refresh the page to select your project. Go Heels!";
+      yield "Connection failed. Please use the key icon in the header to select your project and enable the advisor. Go Heels!";
       return;
     }
 
     try {
-      // Correct initialization required by @google/genai
+      // MANDATORY: new GoogleGenAI({ apiKey: ... })
       const ai = new GoogleGenAI({ apiKey: key });
       
       const chat: Chat = ai.chats.create({
@@ -38,13 +39,13 @@ export class GeminiService {
         yield c.text || "";
       }
     } catch (error: any) {
-      console.error("Gemini stream error:", error);
+      console.error("Gemini service error:", error);
       const errMsg = error?.message || "";
       
       if (errMsg.includes("Requested entity was not found") || errMsg.includes("403") || errMsg.includes("404")) {
-        yield "Access Denied. Your project selection might be from a free tier account. Please use the key icon to re-select a project from a paid Google Cloud account. Go Heels!";
+        yield "Access Denied. Your project selection might be invalid or missing billing. Please click the key icon to re-select a project from a paid Google Cloud account. Go Heels!";
       } else {
-        yield "I'm having trouble reaching the Carolina servers right now. Please check your connection and try again!";
+        yield "The Carolina servers are temporarily busy. Please try your question again in a moment.";
       }
     }
   }
