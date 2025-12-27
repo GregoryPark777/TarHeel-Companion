@@ -1,0 +1,8 @@
+{
+  "name": "TarHeel Insight AI",
+  "description": "An AI-native advisory platform for UNC students, helping navigate campus life, academic requirements, and career resources using advanced RAG and Gemini 3 Pro.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
