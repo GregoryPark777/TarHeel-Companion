@@ -1,51 +1,76 @@
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
-declare const process: {
-  env: {
-    API_KEY: string;
-  };
-};
-
 export class GeminiService {
-  async *sendMessageStream(message: string, context?: string) {
-    // Pick up the key at the moment of the request
-    const key = typeof process !== 'undefined' ? process.env?.API_KEY : null;
+  private getClient() {
+    // Creating a fresh instance ensures we use the latest API key from the environment/selector.
+    // Following guidelines: use the named parameter and direct process.env.API_KEY reference.
+    return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  }
+
+  private handleApiError(error: any) {
+    console.error("Gemini API Error:", error);
+    const errorMessage = error?.message || "";
     
-    if (!key || key === 'undefined' || key.length < 5) {
-      yield "Connection failed. Please use the key icon in the header to select your project and enable the advisor. Go Heels!";
-      return;
+    // If the key is invalid or not found, we signal the UI to reset the key selection
+    if (errorMessage.includes("Requested entity was not found")) {
+      return "KEY_NOT_FOUND";
     }
+    
+    return "I'm having a bit of trouble connecting to the UNC servers. Please try again later! Go Heels!";
+  }
+
+  async sendMessage(message: string, context?: string) {
+    const ai = this.getClient();
+    const chat = ai.chats.create({
+      model: 'gemini-3-pro-preview',
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        temperature: 0.7,
+      },
+    });
+
+    const prompt = context 
+      ? `Using the following context: \n\n${context}\n\nAnswer the student's question: ${message}`
+      : message;
 
     try {
-      // MANDATORY: new GoogleGenAI({ apiKey: ... })
-      const ai = new GoogleGenAI({ apiKey: key });
-      
-      const chat: Chat = ai.chats.create({
-        model: 'gemini-3-pro-preview',
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          temperature: 0.7,
-        },
-      });
+      const response: GenerateContentResponse = await chat.sendMessage({ message: prompt });
+      // Following guidelines: use .text property directly (not as a method).
+      return response.text || "";
+    } catch (error) {
+      return this.handleApiError(error);
+    }
+  }
 
-      const prompt = context 
-        ? `[OFFICIAL DOCUMENT CONTEXT]:\n${context}\n\n[STUDENT QUERY]:\n${message}`
-        : message;
+  async *sendMessageStream(message: string, context?: string) {
+    const ai = this.getClient();
+    const chat = ai.chats.create({
+      model: 'gemini-3-pro-preview',
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        temperature: 0.7,
+      },
+    });
 
+    const prompt = context 
+      ? `Using the following context: \n\n${context}\n\nAnswer the student's question: ${message}`
+      : message;
+
+    try {
       const result = await chat.sendMessageStream({ message: prompt });
       for await (const chunk of result) {
         const c = chunk as GenerateContentResponse;
+        // Following guidelines: use .text property directly.
         yield c.text || "";
       }
     } catch (error: any) {
-      console.error("Gemini service error:", error);
-      const errMsg = error?.message || "";
-      
-      if (errMsg.includes("Requested entity was not found") || errMsg.includes("403") || errMsg.includes("404")) {
-        yield "Access Denied. Your project selection might be invalid or missing billing. Please click the key icon to re-select a project from a paid Google Cloud account. Go Heels!";
+      const err = this.handleApiError(error);
+      if (err === "KEY_NOT_FOUND") {
+        yield "ERROR_KEY_NOT_FOUND";
       } else {
-        yield "The Carolina servers are temporarily busy. Please try your question again in a moment.";
+        yield err;
       }
     }
   }

@@ -1,19 +1,14 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, FileContext } from '../types';
 import { gemini } from '../services/geminiService';
-import { analytics } from '../services/analyticsService';
-import { BRANDING } from '../constants';
 
 const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: `Welcome to ${BRANDING.shortName}! I'm your dedicated advisor for all things UNC. 
-
-Need help with COMP prerequisites? Looking for the best coffee on Franklin Street? Just ask! 
-
-*Pro tip: Upload a syllabus or degree checklist using the paperclip icon for specialized advice.*`,
+      content: 'Hello Tar Heel! I am your personal Insight AI. Whether you need advice on COMP classes, study spots at Davis Library, or finding your way to South Building, I am here to help. Have a syllabus or degree sheet? Upload it and I can help you parse the details!',
       timestamp: new Date()
     }
   ]);
@@ -25,12 +20,9 @@ Need help with COMP prerequisites? Looking for the best coffee on Franklin Stree
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isTyping]);
+  }, [messages]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -44,7 +36,6 @@ Need help with COMP prerequisites? Looking for the best coffee on Franklin Stree
     };
 
     setMessages(prev => [...prev, userMsg]);
-    analytics.trackQuery(input); // REAL TRACKING
     setInput('');
     setIsTyping(true);
 
@@ -58,27 +49,21 @@ Need help with COMP prerequisites? Looking for the best coffee on Franklin Stree
 
     try {
       let fullContent = '';
-      const stream = gemini.sendMessageStream(userMsg.content, uploadedFile?.content);
+      const stream = gemini.sendMessageStream(input, uploadedFile?.content);
       
-      let chunkCount = 0;
       for await (const chunk of stream) {
-        chunkCount++;
+        if (chunk === "ERROR_KEY_NOT_FOUND") {
+          fullContent = "Error: Your API key was not found or is invalid. Please refresh the page and select a valid key from a paid GCP project.";
+          // In a real app we might trigger window.location.reload() or set state
+          break;
+        }
         fullContent += chunk;
         setMessages(prev => prev.map(m => 
           m.id === assistantMsgId ? { ...m, content: fullContent } : m
         ));
       }
-
-      if (chunkCount > 0) {
-        analytics.trackSuccess(true); // REAL SUCCESS TRACKING
-      }
     } catch (err) {
-      console.error("Chat Interaction Error:", err);
-      analytics.trackSuccess(false); // REAL FAILURE TRACKING
-      // Fixed: Removed forbidden instruction to check .env file and instead directed user to project selection
-      setMessages(prev => prev.map(m => 
-        m.id === assistantMsgId ? { ...m, content: "My apologies, I'm having trouble reaching the Carolina servers. Please verify your connection or click the key icon in the header to ensure your advisor project is correctly selected. Go Heels!" } : m
-      ));
+      console.error(err);
     } finally {
       setIsTyping(false);
     }
@@ -99,7 +84,7 @@ Need help with COMP prerequisites? Looking for the best coffee on Franklin Stree
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
           role: 'assistant',
-          content: `Document received! I've indexed **${file.name}**. What would you like to know about it?`,
+          content: `I've successfully loaded "${file.name}". You can now ask me specific questions about its contents!`,
           timestamp: new Date()
         }]);
       };
@@ -108,44 +93,36 @@ Need help with COMP prerequisites? Looking for the best coffee on Franklin Stree
   };
 
   return (
-    <div className="flex flex-col h-[75vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-      {/* File context bar */}
+    <div className="flex flex-col h-[70vh] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {uploadedFile && (
-        <div className="bg-[#7BAFD4]/10 px-6 py-3 border-b border-[#7BAFD4]/20 flex justify-between items-center animate-in slide-in-from-top duration-300">
-          <div className="flex items-center text-xs font-bold text-[#13294B] uppercase tracking-wider">
-            <svg className="w-4 h-4 mr-2 text-[#7BAFD4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-carolina/10 px-4 py-2 border-b border-carolina/20 flex justify-between items-center">
+          <div className="flex items-center text-xs font-medium text-navy">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Active Context: {uploadedFile.name}
+            Using Context: {uploadedFile.name}
           </div>
           <button 
             onClick={() => setUploadedFile(null)}
-            className="text-[10px] bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 px-2 py-1 rounded transition-all font-bold uppercase"
+            className="text-xs text-red-500 hover:text-red-700 font-bold"
           >
-            Clear
+            Remove
           </button>
         </div>
       )}
 
-      {/* Chat Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 scroll-smooth">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30">
         {messages.map((m) => (
-          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
-            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-4 shadow-sm ${
+          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
               m.role === 'user' 
-                ? 'bg-[#13294B] text-white rounded-tr-none' 
-                : 'bg-white text-slate-800 border border-slate-100 rounded-tl-none'
+                ? 'bg-carolina text-white rounded-br-none' 
+                : 'bg-white text-navy border border-gray-100 rounded-bl-none shadow-sm'
             }`}>
-              <div className="text-[15px] whitespace-pre-wrap leading-relaxed prose prose-sm prose-slate">
-                {m.content || (isTyping && m.role === 'assistant' ? (
-                  <div className="flex space-x-1 py-1">
-                    <div className="w-2 h-2 bg-[#7BAFD4] rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-[#7BAFD4] rounded-full animate-bounce delay-100"></div>
-                    <div className="w-2 h-2 bg-[#7BAFD4] rounded-full animate-bounce delay-200"></div>
-                  </div>
-                ) : '')}
+              <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                {m.content || (isTyping && m.role === 'assistant' ? '...' : '')}
               </div>
-              <div className={`text-[9px] mt-2 font-bold uppercase tracking-widest opacity-40 ${m.role === 'user' ? 'text-right' : ''}`}>
+              <div className={`text-[10px] mt-1.5 opacity-50 ${m.role === 'user' ? 'text-right' : ''}`}>
                 {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -153,9 +130,8 @@ Need help with COMP prerequisites? Looking for the best coffee on Franklin Stree
         ))}
       </div>
 
-      {/* Input Area */}
-      <div className="p-6 border-t border-slate-100 bg-white">
-        <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
+      <div className="p-4 border-t border-gray-100 bg-white">
+        <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -166,44 +142,31 @@ Need help with COMP prerequisites? Looking for the best coffee on Franklin Stree
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-3 text-slate-400 hover:text-[#7BAFD4] hover:bg-slate-50 rounded-xl transition-all"
+            className="p-2 text-gray-400 hover:text-carolina transition-colors"
             title="Upload context document"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
             </svg>
           </button>
-          
-          <div className="relative flex-1">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about classes, credits, or campus life..."
-              className="w-full bg-slate-50 border-2 border-transparent focus:border-[#7BAFD4] focus:bg-white rounded-2xl px-5 py-3 text-sm outline-none transition-all shadow-inner"
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-[#7BAFD4]"
-              title="Voice Input (Coming Soon)"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-              </svg>
-            </button>
-          </div>
-
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask about classes, campus life, or your uploaded syllabus..."
+            className="flex-1 bg-gray-50 border-none focus:ring-2 focus:ring-carolina rounded-lg px-4 py-2.5 text-sm outline-none transition-all"
+          />
           <button
             type="submit"
             disabled={!input.trim() || isTyping}
-            className="bg-[#7BAFD4] hover:bg-[#13294B] text-white p-3.5 rounded-2xl transition-all shadow-lg hover:shadow-[#7BAFD4]/20 disabled:opacity-30 disabled:grayscale transform active:scale-95"
+            className="bg-carolina hover:bg-navy text-white p-2.5 rounded-lg transition-colors disabled:opacity-50"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>
         </form>
-        <div className="mt-3 text-[9px] text-slate-400 text-center uppercase tracking-[0.3em] font-black">
-          Gemini 3 Pro Intelligence • Go Heels
+        <div className="mt-2 text-[10px] text-gray-400 text-center uppercase tracking-widest font-bold">
+          Powered by Gemini 3 Pro
         </div>
       </div>
     </div>

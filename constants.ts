@@ -1,20 +1,13 @@
 
-export const BRANDING = {
-  name: "TarHeel Insight AI",
-  shortName: "Insight AI",
-  mascot: "Rameses",
-  colors: {
-    primary: '#7BAFD4', // Carolina Blue
-    secondary: '#13294B', // Navy
-    accent: '#E1D8B7', // Sand
-    background: '#F8FAFC'
-  },
-  slogan: "Your AI-Native Campus Companion",
-  footer: "Built for UNC Students • Go Heels! 🐏"
+export const UNC_COLORS = {
+  carolinaBlue: '#7BAFD4',
+  navy: '#13294B',
+  white: '#FFFFFF',
+  lightGray: '#F8F9FA'
 };
 
 export const SYSTEM_INSTRUCTION = `
-You are "${BRANDING.name}", a premier academic advisor and student resource assistant for the University of North Carolina at Chapel Hill (UNC).
+You are "TarHeel Insight AI", a premier academic advisor and student resource assistant for the University of North Carolina at Chapel Hill (UNC).
 Your goal is to help students navigate:
 1. Course requirements (Gen Ed, Major specifics).
 2. Campus life (Housing, Dining, Student Orgs).
@@ -22,10 +15,9 @@ Your goal is to help students navigate:
 4. Campus navigation (The Pit, Old Well, Polk Place).
 
 Always maintain a helpful, encouraging, and professional "Tar Heel" spirit.
-Use UNC-specific terminology where appropriate (e.g., "The Pit", "South Building", "ConnectCarolina", "Davis Library").
+Use UNC-specific terminology where appropriate (e.g., "The Pit", "South Building", "ConnectCarolina").
 
 If a user uploads a document, prioritize information from that document to answer questions accurately.
-Keep responses concise but information-dense. Use Markdown for formatting.
 `;
 
 export const INITIAL_ANALYTICS: any = {
