@@ -1,4 +1,3 @@
-
 export const UNC_COLORS = {
   carolinaBlue: '#7BAFD4',
   navy: '#13294B',
@@ -21,22 +20,30 @@ If a user uploads a document, prioritize information from that document to answe
 `;
 
 export const INITIAL_ANALYTICS: any = {
-  queries: 1240,
-  successRate: 94.2,
-  commonTopics: [
-    { topic: 'COMP 210 Advice', count: 450 },
-    { topic: 'Housing Lottery', count: 320 },
-    { topic: 'Study Abroad', count: 210 },
-    { topic: 'Dining Hall Hours', count: 180 },
-    { topic: 'Career Peer Mentors', count: 80 }
+  queries: 4829,
+  avgSatisfaction: 4.8,
+  p90Latency: "1.2s",
+  contextUsageRate: 34, // % of users who upload a syllabus
+  intentDistribution: [
+    { name: 'Course Planning', value: 45 },
+    { name: 'Career/Internships', value: 25 },
+    { name: 'Campus Life', value: 20 },
+    { name: 'Housing/Dining', value: 10 }
   ],
   dailyVolume: [
-    { date: 'Mon', count: 120 },
-    { date: 'Tue', count: 150 },
-    { date: 'Wed', count: 180 },
-    { date: 'Thu', count: 210 },
-    { date: 'Fri', count: 190 },
-    { date: 'Sat', count: 90 },
-    { date: 'Sun', count: 100 }
+    { date: 'Oct 20', count: 120 },
+    { date: 'Oct 21', count: 450 }, // Registration window starts
+    { date: 'Oct 22', count: 890 }, // Peak registration stress
+    { date: 'Oct 23', count: 540 },
+    { date: 'Oct 24', count: 310 },
+    { date: 'Oct 25', count: 200 },
+    { date: 'Oct 26', count: 150 }
+  ],
+  topCourses: [
+    { course: 'COMP 210', interest: 88 },
+    { course: 'STOR 435', interest: 65 },
+    { course: 'ECON 410', interest: 54 },
+    { course: 'LFIT', interest: 42 },
+    { course: 'COMP 411', interest: 38 }
   ]
 };

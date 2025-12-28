@@ -1,4 +1,3 @@
-
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -8,9 +7,12 @@ export interface Message {
 
 export interface AnalyticsData {
   queries: number;
-  successRate: number;
-  commonTopics: { topic: string; count: number }[];
+  avgSatisfaction: number;
+  p90Latency: string;
+  contextUsageRate: number;
+  intentDistribution: { name: string; value: number }[];
   dailyVolume: { date: string; count: number }[];
+  topCourses: { course: string; interest: number }[];
 }
 
 export interface FileContext {
