@@ -23,7 +23,8 @@ export const INITIAL_ANALYTICS: any = {
   queries: 4829,
   avgSatisfaction: 4.8,
   p90Latency: "1.2s",
-  contextUsageRate: 34, // % of users who upload a syllabus
+  contextUsageRate: 34,
+  retentionRate: 68, // % of users returning within 7 days
   intentDistribution: [
     { name: 'Course Planning', value: 45 },
     { name: 'Career/Internships', value: 25 },
@@ -32,8 +33,8 @@ export const INITIAL_ANALYTICS: any = {
   ],
   dailyVolume: [
     { date: 'Oct 20', count: 120 },
-    { date: 'Oct 21', count: 450 }, // Registration window starts
-    { date: 'Oct 22', count: 890 }, // Peak registration stress
+    { date: 'Oct 21', count: 450 },
+    { date: 'Oct 22', count: 890 },
     { date: 'Oct 23', count: 540 },
     { date: 'Oct 24', count: 310 },
     { date: 'Oct 25', count: 200 },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, Cell, PieChart, Pie, Legend
 } from 'recharts';
 import { INITIAL_ANALYTICS } from '../constants';
@@ -22,10 +22,10 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">User CSAT</p>
-          <p className="text-3xl font-header font-black text-carolina">{data.avgSatisfaction}/5.0</p>
-          <div className="mt-2 text-[10px] font-bold text-slate-400 bg-slate-50 inline-block px-2 py-0.5 rounded-full">
-            High Confidence
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">North Star: 7D Retention</p>
+          <p className="text-3xl font-header font-black text-carolina">{data.retentionRate}%</p>
+          <div className="mt-2 text-[10px] font-bold text-emerald-500 bg-emerald-50 inline-block px-2 py-0.5 rounded-full">
+            Top 5% for Edu-Apps
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
@@ -131,18 +131,18 @@ const Dashboard: React.FC = () => {
         <div className="lg:col-span-2 bg-navy p-8 rounded-2xl text-white relative overflow-hidden">
           <div className="relative z-10">
             <h3 className="text-xs font-black text-carolina uppercase tracking-[0.4em] mb-4">Strategic Product Roadmap</h3>
-            <p className="text-lg font-header font-bold mb-6">Based on high "Course Planning" intent (45%), we are prioritizing these Q4 initiatives:</p>
+            <p className="text-lg font-header font-bold mb-6">High "Course Planning" intent (45%) identified. Executing Q4 initiatives:</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm">
                 <p className="text-[10px] font-black text-carolina uppercase mb-1">Current Sprint</p>
                 <p className="text-sm font-bold">ConnectCarolina API Bridge</p>
-                <p className="text-[11px] text-white/50 mt-2">Will allow direct enrollment from chat interface.</p>
+                <p className="text-[11px] text-white/50 mt-2">Enabling one-click enrollment from chat.</p>
               </div>
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm">
                 <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Backlog</p>
                 <p className="text-sm font-bold">Multimodal Syllabus Parsing</p>
-                <p className="text-[11px] text-white/50 mt-2">Supporting OCR for image-based schedule uploads.</p>
+                <p className="text-[11px] text-white/50 mt-2">Support for OCR schedule uploads.</p>
               </div>
             </div>
           </div>
